@@ -15,13 +15,20 @@ namespace InventarioApp.Infrastructure.Repositories
         //buscar todos las ordenes de compra
         public List<OrdenDeCompra> GetAll()
         {
-            return _context.OrdenDeCompras.ToList();
+            return _context.OrdenDeCompras
+                   .Include(o => o.Proveedor)
+                   .Include(o => o.Producto)
+                   .ToList();
         }
         //buscar por ID
         public OrdenDeCompra? GetById(int ID)
         {
             // CORREGIDO: Cambiado OrdenDeCompras a OrdenDeCompra y el número 0 por la letra o
-            return _context.OrdenDeCompras.FirstOrDefault(o => o.ID == ID);
+            return _context.OrdenDeCompras
+                   .Include(o => o.Proveedor)
+                   .Include(o => o.Producto)
+                   .FirstOrDefault(o => o.ID == ID);
+
         }
         // Agregar orden
         public void Add(OrdenDeCompra orden)

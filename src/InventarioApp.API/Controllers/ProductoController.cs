@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace InventarioApp.API.Controllers
 {
     [ApiController]
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
     public class ProductoController : ControllerBase
     {

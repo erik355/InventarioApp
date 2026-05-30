@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventarioApp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260527094433_InitialCreate")]
+    [Migration("20260530213915_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -35,13 +35,17 @@ namespace InventarioApp.Infrastructure.Migrations
                     b.Property<DateTime>("Fecha")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("ProductoId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<int>("ProveedorId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("PruductoId")
-                        .HasColumnType("INTEGER");
-
                     b.HasKey("ID");
+
+                    b.HasIndex("ProductoId");
+
+                    b.HasIndex("ProveedorId");
 
                     b.ToTable("OrdenDeCompras");
                 });
@@ -96,6 +100,25 @@ namespace InventarioApp.Infrastructure.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("Proveedor");
+                });
+
+            modelBuilder.Entity("InventarioApp.Domain.Entities.OrdenDeCompra", b =>
+                {
+                    b.HasOne("InventarioApp.Domain.Entities.Producto", "Producto")
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InventarioApp.Domain.Entities.Proveedor", "Proveedor")
+                        .WithMany()
+                        .HasForeignKey("ProveedorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Producto");
+
+                    b.Navigation("Proveedor");
                 });
 #pragma warning restore 612, 618
         }

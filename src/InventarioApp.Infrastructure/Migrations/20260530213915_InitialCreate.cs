@@ -12,23 +12,6 @@ namespace InventarioApp.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "OrdenDeCompras",
-                columns: table => new
-                {
-                    ID = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Fecha = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Estado = table.Column<int>(type: "INTEGER", nullable: false),
-                    ProveedorId = table.Column<int>(type: "INTEGER", nullable: false),
-                    PruductoId = table.Column<int>(type: "INTEGER", nullable: false),
-                    Cantidad = table.Column<int>(type: "INTEGER", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_OrdenDeCompras", x => x.ID);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Producto",
                 columns: table => new
                 {
@@ -61,6 +44,45 @@ namespace InventarioApp.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Proveedor", x => x.ID);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "OrdenDeCompras",
+                columns: table => new
+                {
+                    ID = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Fecha = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    Estado = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProveedorId = table.Column<int>(type: "INTEGER", nullable: false),
+                    ProductoId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Cantidad = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_OrdenDeCompras", x => x.ID);
+                    table.ForeignKey(
+                        name: "FK_OrdenDeCompras_Producto_ProductoId",
+                        column: x => x.ProductoId,
+                        principalTable: "Producto",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_OrdenDeCompras_Proveedor_ProveedorId",
+                        column: x => x.ProveedorId,
+                        principalTable: "Proveedor",
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrdenDeCompras_ProductoId",
+                table: "OrdenDeCompras",
+                column: "ProductoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_OrdenDeCompras_ProveedorId",
+                table: "OrdenDeCompras",
+                column: "ProveedorId");
         }
 
         /// <inheritdoc />
