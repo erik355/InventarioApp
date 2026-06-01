@@ -8,6 +8,9 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.DependencyInjection;
 using InventarioApp.API.Middleware;
 using System.Text;
+using FluentValidation;
+using InventarioApp.API.Validators;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,7 +22,7 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 
-// 1. CONFIGURACIÓN DE CORS (Agregado acá)
+// 1. CONFIGURACIÓN DE CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirReact", policy =>
@@ -33,6 +36,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
 builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 builder.Services.AddScoped<IOrdenDeCompraRepository, OrdenDeCompraRepository>();
+builder.Services.AddScoped<IValidator<Producto>, ProductoValidator>();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=inventario.db"));
@@ -70,3 +74,4 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
+//dotnet run --project src/InventarioApp.API

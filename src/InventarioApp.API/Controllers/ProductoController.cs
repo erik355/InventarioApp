@@ -2,6 +2,8 @@ using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
+using System.ComponentModel.DataAnnotations;
 
 namespace InventarioApp.API.Controllers
 {
@@ -11,10 +13,12 @@ namespace InventarioApp.API.Controllers
     public class ProductoController : ControllerBase
     {
         private readonly IProductoRepository _repository;
+        private readonly IValidator<Producto> _validator;
 
-        public ProductoController(IProductoRepository repository)
+        public ProductoController(IProductoRepository repository, IValidator<Producto> validator)
         {
             _repository = repository;
+            _validator = validator;
         }
     
     //busacr todos los productos 
@@ -43,6 +47,16 @@ namespace InventarioApp.API.Controllers
         public IActionResult Create([FromBody] Producto Producto)
         {
             if(Producto == null) return BadRequest();
+
+            var validationResult = _validator.Validate(Producto);
+
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors.Select(e => new{
+                   campo = e.PropertyName,
+                   error = e.ErrorMessage 
+                }));
+            }
             _repository.Add(Producto);
             return CreatedAtAction(nameof(GetById), new{ID = Producto.ID},Producto);
             
