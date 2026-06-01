@@ -1,6 +1,7 @@
 using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
 
 namespace InventarioApp.API.Controllers
 {
@@ -9,10 +10,12 @@ namespace InventarioApp.API.Controllers
     public class OrdenDeCompraController : ControllerBase
     {
         private readonly IOrdenDeCompraRepository _repository;
+        private readonly IValidator<OrdenDeCompra> _validator;
 
-        public OrdenDeCompraController(IOrdenDeCompraRepository repository)
+        public OrdenDeCompraController(IOrdenDeCompraRepository repository, IValidator<OrdenDeCompra> validator)
         {
             _repository = repository;
+            _validator = validator;
         }
 
         // Buscar todas las órdenes de compra 
@@ -37,13 +40,22 @@ namespace InventarioApp.API.Controllers
 
         // Crear una nueva orden de compra
         [HttpPost]
-        public IActionResult Create([FromBody] OrdenDeCompra orden)
-        {
-            if (orden == null) return BadRequest();
-            
-            _repository.Add(orden);
-            return CreatedAtAction(nameof(GetById), new { ID = orden.ID }, orden);
-        }
+public IActionResult Create([FromBody] OrdenDeCompra orden)
+{
+    if (orden == null) return BadRequest();
+
+    var validationResult = _validator.Validate(orden);
+    if (!validationResult.IsValid)
+    {
+        return BadRequest(validationResult.Errors.Select(e => new { 
+            campo = e.PropertyName, 
+            error = e.ErrorMessage 
+        }));
+    }
+
+    _repository.Add(orden);
+    return CreatedAtAction(nameof(GetById), new { ID = orden.ID }, orden);
+}
 
         // Eliminar orden de compra 
         [HttpDelete("{ID}")]

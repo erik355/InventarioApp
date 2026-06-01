@@ -37,6 +37,8 @@ builder.Services.AddScoped<IProductoRepository, ProductoRepository>();
 builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
 builder.Services.AddScoped<IOrdenDeCompraRepository, OrdenDeCompraRepository>();
 builder.Services.AddScoped<IValidator<Producto>, ProductoValidator>();
+builder.Services.AddScoped<IValidator<Proveedor>, ProveedorValidator>();
+builder.Services.AddScoped<IValidator<OrdenDeCompra>, OrdenDeCompraValidator>();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=inventario.db"));

@@ -1,6 +1,7 @@
 using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using FluentValidation;
 
 namespace InventarioApp.API.Controllers
 {
@@ -9,10 +10,12 @@ namespace InventarioApp.API.Controllers
     public class ProveedorController : ControllerBase
     {
         private readonly IProveedorRepository _repository;
+        private readonly IValidator<Proveedor> _validator;
 
-        public ProveedorController(IProveedorRepository repository)
+        public ProveedorController(IProveedorRepository repository, IValidator<Proveedor> validator)
         {
             _repository = repository;
+            _validator = validator;
         }
 
         // Buscar todos los proveedores 
@@ -36,14 +39,23 @@ namespace InventarioApp.API.Controllers
         }
 
         // Crear un nuevo proveedor
-        [HttpPost]
-        public IActionResult Create([FromBody] Proveedor proveedor)
-        {
-            if(proveedor == null) return BadRequest();
+       [HttpPost]
+public IActionResult Create([FromBody] Proveedor proveedor)
+{
+    if (proveedor == null) return BadRequest();
 
-            _repository.Add(proveedor);
-            return CreatedAtAction(nameof (GetById), new {ID = proveedor.ID}, proveedor);
-        }
+    var validationResult = _validator.Validate(proveedor);
+    if (!validationResult.IsValid)
+    {
+        return BadRequest(validationResult.Errors.Select(e => new { 
+            campo = e.PropertyName, 
+            error = e.ErrorMessage 
+        }));
+    }
+
+    _repository.Add(proveedor);
+    return CreatedAtAction(nameof(GetById), new { ID = proveedor.ID }, proveedor);
+}
         //Eliminar proveedor
         [HttpDelete("{ID}")]
         public IActionResult Delete(int ID)

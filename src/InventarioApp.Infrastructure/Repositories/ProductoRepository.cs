@@ -4,6 +4,8 @@ using InventarioApp.Domain.Entities;
 using InventarioApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore.Metadata;
 using SQLitePCL;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace InventarioApp.Infrastructure.Repositories
 {
@@ -51,6 +53,15 @@ namespace InventarioApp.Infrastructure.Repositories
         {
             _context.Producto.Update(Producto);
             _context.SaveChanges();
+        }
+        //Obtener productos paginados
+        public List<Producto> GetPaged(int pagina, int tamaño)
+        {
+            return _context.Producto
+               .OrderBy(p => p.ID)
+               .Skip((pagina - 1) * tamaño)
+               .Take(tamaño)
+               .ToList();
         }
     }
 }

@@ -1,4 +1,5 @@
 using InventarioApp.Domain.Entities;
+using System.Collections.Generic;
 
 namespace InventarioApp.Application.Interfaces
 {
@@ -9,6 +10,7 @@ namespace InventarioApp.Application.Interfaces
         void Add(Producto producto);
         void Delete(int ID);
         void Update(Producto producto);
+        List<Producto>GetPaged(int pagina,  int tamaño);
     }
 }
 

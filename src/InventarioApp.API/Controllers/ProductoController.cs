@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace InventarioApp.API.Controllers
 {
@@ -21,28 +23,43 @@ namespace InventarioApp.API.Controllers
             _validator = validator;
         }
     
-    //busacr todos los productos 
+        // buscar todos los productos 
         [HttpGet]
         public IActionResult GetAll()
         {
-        List<Producto> Productos = _repository.GetAll();
-
-        return Ok(Productos);
-
+            List<Producto> Productos = _repository.GetAll();
+            return Ok(Productos);
         }
-    //buscar producto por id
+
+        //Buscar productos con paginación
+        [HttpGet("paginado")]
+        public IActionResult GetPaginado([FromQuery] int pagina = 1, [FromQuery] int tamano = 10)
+        {
+        
+            if (pagina <= 0 || tamano <= 0)
+            {
+                return BadRequest(new { mensaje = "La página y el tamaño deben ser mayores a 0." });
+            }
+
+            List<Producto> productosPaginados = _repository.GetPaged(pagina, tamano);
+
+            return Ok(productosPaginados);
+        }
+
+        // buscar producto por id
         [HttpGet("{ID}")]
         public IActionResult GetById(int ID)
         {
-             var Producto = _repository.GetById(ID);
+            var Producto = _repository.GetById(ID);
         
-        if (Producto == null)
+            if (Producto == null)
             {
                 return NotFound();
             }
-        return Ok(Producto);
+            return Ok(Producto);
         }
-    // crear un nuevo producto
+
+        // crear un nuevo producto
         [HttpPost]
         public IActionResult Create([FromBody] Producto Producto)
         {
@@ -59,35 +76,34 @@ namespace InventarioApp.API.Controllers
             }
             _repository.Add(Producto);
             return CreatedAtAction(nameof(GetById), new{ID = Producto.ID},Producto);
-            
         }
-    //eliminar producto 
+
+        // eliminar producto 
         [HttpDelete("{ID}")]
         public IActionResult Delete (int ID)
         {
             var Producto = _repository.GetById(ID);
-        if (Producto == null)
+            if (Producto == null)
             {
                 return NotFound();
             }
-         _repository.Delete (ID);
-         return NoContent();
-
+            _repository.Delete (ID);
+            return NoContent();
         }
-    //modificar producto
-    [HttpPut("{ID}")]
+
+        // modificar producto
+        [HttpPut("{ID}")]
         public IActionResult Update(int ID, [FromBody] Producto Producto)
         {
-             var ProductoExistente = _repository.GetById(ID);
+            var ProductoExistente = _repository.GetById(ID);
         
-        if (ProductoExistente == null)
+            if (ProductoExistente == null)
             {
                 return NotFound();
             }
-        Producto.ID = ID;
-        _repository.Update(Producto);
-        return Ok(Producto);
+            Producto.ID = ID;
+            _repository.Update(Producto);
+            return Ok(Producto);
         }
-        
     }
 }
