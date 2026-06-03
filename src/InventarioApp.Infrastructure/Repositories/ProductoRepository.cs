@@ -54,6 +54,7 @@ namespace InventarioApp.Infrastructure.Repositories
             _context.Producto.Update(Producto);
             _context.SaveChanges();
         }
+
         //Obtener productos paginados
         public List<Producto> GetPaged(int pagina, int tamaño)
         {
@@ -62,6 +63,20 @@ namespace InventarioApp.Infrastructure.Repositories
                .Skip((pagina - 1) * tamaño)
                .Take(tamaño)
                .ToList();
+        }
+
+        //Obtener productos con stock critico
+        public List<Producto> GetProductosBajoStock()
+        {
+            return _context.Producto
+                .Where(p => p.Stock <= p.StockMinimo)
+                .ToList();
+        }
+
+        //Multiplica Precio * Stock de cada producto y suma todo eficientemente
+        public double GetValorTotalInventario()
+        {
+            return _context.Producto.Sum(p => p.Precio * p.Stock);
         }
     }
 }

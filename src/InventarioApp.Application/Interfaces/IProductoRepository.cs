@@ -11,6 +11,8 @@ namespace InventarioApp.Application.Interfaces
         void Delete(int ID);
         void Update(Producto producto);
         List<Producto>GetPaged(int pagina,  int tamaño);
+        List<Producto> GetProductosBajoStock();
+        double GetValorTotalInventario();
     }
 }
 

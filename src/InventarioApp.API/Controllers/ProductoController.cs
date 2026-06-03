@@ -51,6 +51,30 @@ namespace InventarioApp.API.Controllers
 
             return Ok(productosPaginados);
         }
+        //Obtener productos con stock crítico 
+        [HttpGet("bajo-stock")]
+        public IActionResult GetBajoStock()
+        {
+            _logger.LogInformation("Se invocó GetBajoStock: Consultando productos con stock crítico.");
+
+            List<Producto> productosCriticos = _repository.GetProductosBajoStock();
+
+            _logger.LogInformation("Consulta de bajo stock finalizada. Se encontraron {Cantidad} productos en alerta.", productosCriticos.Count);
+
+            return Ok(productosCriticos);
+        }
+        // 💰 NUEVO ENDPOINT: Obtener el valor monetario total de todo el inventario
+         [HttpGet("valor-total")]
+        public IActionResult GetValorTotal()
+        {
+             _logger.LogInformation("Se invocó GetValorTotal: Calculando el valor monetario total del inventario.");
+
+            double valorTotal = _repository.GetValorTotalInventario();
+
+            _logger.LogInformation("Cálculo finalizado. El valor total del stock actual es: ${ValorTotal}", valorTotal);
+
+            return Ok(new { valorTotal = valorTotal });
+        }
 
         // buscar producto por id
         [HttpGet("{ID}")]
