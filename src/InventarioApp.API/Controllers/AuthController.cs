@@ -6,6 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims; 
 using System.Text; 
 using InventarioApp.API.DTOs;
+using Microsoft.Extensions.Logging; 
 
 namespace InventarioApp.API.Controllers
 {
@@ -14,24 +15,31 @@ namespace InventarioApp.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _configuration;
-
-        public AuthController(IConfiguration configuration)
+        private readonly ILogger<AuthController> _logger; 
+        // 📦 ACTUALIZADO: Constructor inyectando el ILogger junto a la configuración
+        public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
         {
             _configuration = configuration;
+            _logger = logger;
         }
 
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDto loginDto)
         {
+            _logger.LogInformation("Se invocó Login: Intento de inicio de sesión iniciado.");
+
             // VALIDACION DE NULOS BASICA
             if (loginDto == null || string.IsNullOrEmpty(loginDto.Usuario) || string.IsNullOrEmpty(loginDto.Contraseña))
             {
+                _logger.LogWarning("Login fallido: Datos incompletos en la solicitud.");
                 return BadRequest("El usuario y la contraseña son requeridos.");
             }
 
             // Verificacion hardcodeada (temporal)
             if (loginDto.Usuario == "admin" && loginDto.Contraseña == "1234")
             {
+                _logger.LogInformation("Login exitoso para el usuario: '{Usuario}'. Generando credenciales de seguridad.", loginDto.Usuario);
+
                 //Crear los Claims (la información del usuario que viaja en el token)
                 var claims = new[]
                 {
@@ -62,6 +70,8 @@ namespace InventarioApp.API.Controllers
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var tokenString = tokenHandler.WriteToken(tokenDescriptor);
 
+                _logger.LogInformation("Token JWT emitido correctamente para el usuario '{Usuario}'. Expira el: {Expiracion}", loginDto.Usuario, tokenDescriptor.ValidTo);
+
                 //Devolver el token al cliente
                 return Ok(new 
                 { 
@@ -70,7 +80,8 @@ namespace InventarioApp.API.Controllers
                 });
             }
 
-            // Si las credenciales no coinciden
+            // Si las credenciales no coinciden (Alerta de seguridad potencial)
+            _logger.LogWarning("Login rechazado: Credenciales incorrectas para el intento de usuario '{Usuario}'.", loginDto.Usuario);
             return Unauthorized("Usuario o Contraseña incorrecta");
         }
     }

@@ -62,11 +62,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 app.UseMiddleware<ErrorHandlingMiddleware>();
-app.UseHttpsRedirection();
-// ACTIVAR CORS 
+
 app.UseCors("PermitirReact");
+
+app.UseHttpsRedirection();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 if (app.Environment.IsDevelopment())
