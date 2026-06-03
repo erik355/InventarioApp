@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+
 namespace InventarioApp.Domain.Entities
+
 {
 public class Producto
 {
@@ -8,8 +12,9 @@ public class Producto
     public  double Precio {get ; set ;}
     public int StockMinimo{get; set ;}
     public DateTime Fecha {get ; set ;}
-
     public int Stock {get ; set ;}
+
+    public List<Proveedor> Proveedores{get ; set ;} =new List<Proveedor>();
 }
 }
         
