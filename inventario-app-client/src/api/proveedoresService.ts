@@ -7,12 +7,17 @@ export const proveedoresService = {
         return respuesta.data;
     },
 
-    /*
-    obtenerPaginados: async (pagina: number = 1, tamano: number = 10): Promise<Proveedor[]> => {
-        const respuesta = await api.get<Proveedor[]>('/proveedor/paginado', {
-            params: { pagina, tamano }
-        });
+    crear: async (nuevoProveedor: Omit<Proveedor, 'id'>): Promise<Proveedor> => {
+        const respuesta = await api.post<Proveedor>('/proveedor', nuevoProveedor);
+        return respuesta.data;
+    },
+
+    eliminar: async (id: number): Promise<void> => {
+        await api.delete(`/proveedor/${id}`);
+    },
+
+    actualizar: async (id: number, proveedorEditado: Proveedor): Promise<Proveedor> => {
+        const respuesta = await api.put<Proveedor>(`/proveedor/${id}`, proveedorEditado);
         return respuesta.data;
     }
-    */
 };
