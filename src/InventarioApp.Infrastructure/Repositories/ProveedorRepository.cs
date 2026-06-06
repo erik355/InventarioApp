@@ -1,47 +1,52 @@
 using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
 using InventarioApp.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore; // Necesario para los métodos Async
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks; // Necesario para Task
 
 namespace InventarioApp.Infrastructure.Repositories
 {
     public class ProveedorRepository : IProveedorRepository
     {
         private readonly AppDbContext _context;
+        
         public ProveedorRepository(AppDbContext context)
         {
             _context = context;
         }
-        //Buscar todos los proveedores 
-        public List<Proveedor> GetAll()
+
+        public async Task<List<Proveedor>> GetAllAsync()
         {
-            return _context.Proveedor.ToList();
+            return await _context.Proveedor.ToListAsync();
         }
-        //Busacar proveedor por ID
-        public Proveedor? GetById(int ID)
+
+        public async Task<Proveedor?> GetByIdAsync(int ID)
         {
-            return _context.Proveedor.FirstOrDefault(p=> p.ID == ID);
+            return await _context.Proveedor.FirstOrDefaultAsync(p => p.ID == ID);
         }
-        //Agregar prodeedor 
-        public void Add(Proveedor proveedor)
+
+        public async Task AddAsync(Proveedor proveedor)
         {
-            _context.Proveedor.Add(proveedor);
-            _context.SaveChanges();
+            await _context.Proveedor.AddAsync(proveedor);
+            await _context.SaveChangesAsync();
         }
-        //eliminar proveedor 
-        public void Delete(int ID)
+
+        public async Task DeleteAsync(int ID)
         {
-            var proveedor = GetById(ID);
+            var proveedor = await GetByIdAsync(ID);
             if (proveedor != null)
             {
                 _context.Proveedor.Remove(proveedor);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
         }
-        //Actualizar proveedor 
-        public void Update (Proveedor proveedor)
+
+        public async Task UpdateAsync(Proveedor proveedor)
         {
             _context.Proveedor.Update(proveedor);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
     }
 }

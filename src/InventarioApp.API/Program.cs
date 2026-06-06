@@ -10,7 +10,7 @@ using InventarioApp.API.Middleware;
 using System.Text;
 using FluentValidation;
 using InventarioApp.API.Validators;
-
+using InventarioApp.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,11 +39,12 @@ builder.Services.AddScoped<IOrdenDeCompraRepository, OrdenDeCompraRepository>();
 builder.Services.AddScoped<IValidator<Producto>, ProductoValidator>();
 builder.Services.AddScoped<IValidator<Proveedor>, ProveedorValidator>();
 builder.Services.AddScoped<IValidator<OrdenDeCompra>, OrdenDeCompraValidator>();
+builder.Services.AddScoped<IMovimientoService, MovimientoService>();
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=inventario.db"));
 
-// Configuración de Autenticación con JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -56,20 +57,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(
-               Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+               Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "ClaveSecretaPorDefecto123!"))
         };
     });
 
 var app = builder.Build();
+
+// --- INICIALIZACIÓN SEGURA DE LA BASE DE DATOS ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<AppDbContext>();
+    context.Database.EnsureCreated(); 
+}
+// --------------------------------------------------
+
 app.UseMiddleware<ErrorHandlingMiddleware>();
-
 app.UseCors("PermitirReact");
-
 app.UseHttpsRedirection();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 if (app.Environment.IsDevelopment())
@@ -79,4 +86,3 @@ if (app.Environment.IsDevelopment())
 }
 
 app.Run();
-//dotnet run --project src/InventarioApp.API

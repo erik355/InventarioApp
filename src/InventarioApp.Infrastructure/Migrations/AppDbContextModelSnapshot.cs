@@ -17,6 +17,39 @@ namespace InventarioApp.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.8");
 
+            modelBuilder.Entity("InventarioApp.Domain.Entities.MovimientoStock", b =>
+                {
+                    b.Property<int>("ID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("FechaMovimiento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notas")
+                        .HasColumnType("TEXT");
+
+                    b.Property<double>("PrecioCompra")
+                        .HasColumnType("REAL");
+
+                    b.Property<int>("ProductoID")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("ProveedorID")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("ID");
+
+                    b.HasIndex("ProductoID");
+
+                    b.HasIndex("ProveedorID");
+
+                    b.ToTable("MovimientoStock");
+                });
+
             modelBuilder.Entity("InventarioApp.Domain.Entities.OrdenDeCompra", b =>
                 {
                     b.Property<int>("ID")
@@ -44,7 +77,7 @@ namespace InventarioApp.Infrastructure.Migrations
 
                     b.HasIndex("ProveedorId");
 
-                    b.ToTable("OrdenDeCompras");
+                    b.ToTable("OrdenDeCompra");
                 });
 
             modelBuilder.Entity("InventarioApp.Domain.Entities.Producto", b =>
@@ -53,17 +86,14 @@ namespace InventarioApp.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("Cantidad")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("Fecha")
+                    b.Property<string>("Nombre")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("NombreDelProducto")
-                        .HasColumnType("TEXT");
-
-                    b.Property<double>("Precio")
+                    b.Property<double>("PrecioVenta")
                         .HasColumnType("REAL");
+
+                    b.Property<int?>("ProveedorID")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int>("Stock")
                         .HasColumnType("INTEGER");
@@ -72,6 +102,8 @@ namespace InventarioApp.Infrastructure.Migrations
                         .HasColumnType("INTEGER");
 
                     b.HasKey("ID");
+
+                    b.HasIndex("ProveedorID");
 
                     b.ToTable("Producto");
                 });
@@ -99,19 +131,21 @@ namespace InventarioApp.Infrastructure.Migrations
                     b.ToTable("Proveedor");
                 });
 
-            modelBuilder.Entity("ProductoProveedor", b =>
+            modelBuilder.Entity("InventarioApp.Domain.Entities.MovimientoStock", b =>
                 {
-                    b.Property<int>("ProductosID")
-                        .HasColumnType("INTEGER");
+                    b.HasOne("InventarioApp.Domain.Entities.Producto", "Producto")
+                        .WithMany("Movimientos")
+                        .HasForeignKey("ProductoID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Property<int>("ProveedoresID")
-                        .HasColumnType("INTEGER");
+                    b.HasOne("InventarioApp.Domain.Entities.Proveedor", "Proveedor")
+                        .WithMany()
+                        .HasForeignKey("ProveedorID");
 
-                    b.HasKey("ProductosID", "ProveedoresID");
+                    b.Navigation("Producto");
 
-                    b.HasIndex("ProveedoresID");
-
-                    b.ToTable("ProductoProveedor");
+                    b.Navigation("Proveedor");
                 });
 
             modelBuilder.Entity("InventarioApp.Domain.Entities.OrdenDeCompra", b =>
@@ -133,19 +167,21 @@ namespace InventarioApp.Infrastructure.Migrations
                     b.Navigation("Proveedor");
                 });
 
-            modelBuilder.Entity("ProductoProveedor", b =>
+            modelBuilder.Entity("InventarioApp.Domain.Entities.Producto", b =>
                 {
-                    b.HasOne("InventarioApp.Domain.Entities.Producto", null)
-                        .WithMany()
-                        .HasForeignKey("ProductosID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("InventarioApp.Domain.Entities.Proveedor", null)
-                        .WithMany()
-                        .HasForeignKey("ProveedoresID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany("Productos")
+                        .HasForeignKey("ProveedorID");
+                });
+
+            modelBuilder.Entity("InventarioApp.Domain.Entities.Producto", b =>
+                {
+                    b.Navigation("Movimientos");
+                });
+
+            modelBuilder.Entity("InventarioApp.Domain.Entities.Proveedor", b =>
+                {
+                    b.Navigation("Productos");
                 });
 #pragma warning restore 612, 618
         }

@@ -1,18 +1,18 @@
 using InventarioApp.Domain.Entities;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace InventarioApp.Application.Interfaces
 {
     public interface IProductoRepository
     {
-        List<Producto>GetAll();
-        Producto? GetById(int ID);
-        void Add(Producto producto);
-        void Delete(int ID);
-        void Update(Producto producto);
-        List<Producto>GetPaged(int pagina,  int tamaño);
-        List<Producto> GetProductosBajoStock();
-        double GetValorTotalInventario();
+        Task<List<Producto>> GetAllAsync();
+        Task<Producto?> GetByIdAsync(int ID);
+        Task AddAsync(Producto producto);
+        Task DeleteAsync(int ID);
+        Task UpdateAsync(Producto producto);
+        Task<List<Producto>> GetPagedAsync(int pagina, int tamaño);
+        Task<List<Producto>> GetProductosBajoStockAsync();
+        Task<double> GetValorTotalInventarioAsync();
     }
 }
-

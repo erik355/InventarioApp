@@ -2,9 +2,11 @@ using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
+using InventarioApp.Infrastructure.Data;
 using Microsoft.Extensions.Logging; 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace InventarioApp.API.Controllers
 {
@@ -13,106 +15,98 @@ namespace InventarioApp.API.Controllers
     public class OrdenDeCompraController : ControllerBase
     {
         private readonly IOrdenDeCompraRepository _repository;
+        private readonly IProductoRepository _productoRepository;
         private readonly IValidator<OrdenDeCompra> _validator;
-        private readonly ILogger<OrdenDeCompraController> _logger; 
-        // 📦 ACTUALIZADO: Constructor inyectando el ILogger
+        private readonly ILogger<OrdenDeCompraController> _logger;
+        private readonly AppDbContext _context;
+
         public OrdenDeCompraController(
-            IOrdenDeCompraRepository repository, 
+            IOrdenDeCompraRepository repository,
+            IProductoRepository productoRepository, 
             IValidator<OrdenDeCompra> validator, 
-            ILogger<OrdenDeCompraController> logger)
+            ILogger<OrdenDeCompraController> logger,
+            AppDbContext context)
         {
             _repository = repository;
+            _productoRepository = productoRepository;
             _validator = validator;
             _logger = logger;
+            _context = context;
         }
 
-        // Buscar todas las órdenes de compra 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            _logger.LogInformation("Se invocó GetAll: Consultando el listado completo de órdenes de compra.");
-            List<OrdenDeCompra> Ordenes = _repository.GetAll();
-            return Ok(Ordenes);
+            _logger.LogInformation("Consultando el listado completo de órdenes.");
+            var ordenes = await _repository.GetAllAsync();
+            return Ok(ordenes);
         }
 
-        // Buscar orden por id
         [HttpGet("{ID}")]
-        public IActionResult GetById(int ID)
+        public async Task<IActionResult> GetById(int ID)
         {
-            _logger.LogInformation("Se invocó GetById: Buscando orden de compra con ID {ID}.", ID);
-            var orden = _repository.GetById(ID);
-            
-            if (orden == null)
-            {
-                _logger.LogWarning("GetById fallido: No se encontró la orden de compra con ID {ID}.", ID);
-                return NotFound();
-            }
+            var orden = await _repository.GetByIdAsync(ID);
+            if (orden == null) return NotFound();
             return Ok(orden);
         }
 
-        // Crear una nueva orden de compra
         [HttpPost]
-        public IActionResult Create([FromBody] OrdenDeCompra orden)
+        public async Task<IActionResult> Create([FromBody] OrdenDeCompra orden)
         {
-            _logger.LogInformation("Se invocó Create: Intentando registrar una nueva orden de compra.");
-            
-            if (orden == null) 
-            {
-                _logger.LogWarning("Create fallido: El cuerpo de la orden llegó nulo.");
-                return BadRequest();
-            }
+            var validationResult = await _validator.ValidateAsync(orden);
+            if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
 
-            var validationResult = _validator.Validate(orden);
-            if (!validationResult.IsValid)
-            {
-                _logger.LogWarning("Create fallido: Error de validación para la orden de compra. Total errores: {CantidadErrores}", validationResult.Errors.Count);
-                return BadRequest(validationResult.Errors.Select(e => new { 
-                    campo = e.PropertyName, 
-                    error = e.ErrorMessage 
-                }));
-            }
-
-            _repository.Add(orden);
-            _logger.LogInformation("Orden de compra creada exitosamente con ID {ID}.", orden.ID);
-            
+            await _repository.AddAsync(orden);
             return CreatedAtAction(nameof(GetById), new { ID = orden.ID }, orden);
         }
 
-        // Eliminar orden de compra 
         [HttpDelete("{ID}")]
-        public IActionResult Delete(int ID)
+        public async Task<IActionResult> Delete(int ID)
         {
-            _logger.LogInformation("Se invocó Delete: Intentando eliminar orden de compra con ID {ID}.", ID);
-            var orden = _repository.GetById(ID);
+            var orden = await _repository.GetByIdAsync(ID);
+            if (orden == null) return NotFound();
             
-            if (orden == null)
-            {
-                _logger.LogWarning("Delete fallido: No existe la orden de compra con ID {ID}.", ID);
-                return NotFound();
-            }
-            
-            _repository.Delete(ID);
-            _logger.LogInformation("Orden de compra con ID {ID} eliminada correctamente.", ID);
+            await _repository.DeleteAsync(ID);
             return NoContent();
         }
 
-        // Modificar orden de compra
         [HttpPut("{ID}")]
-        public IActionResult Update(int ID, [FromBody] OrdenDeCompra orden)
+        public async Task<IActionResult> Update(int ID, [FromBody] OrdenDeCompra orden)
         {
-            _logger.LogInformation("Se invocó Update: Intentando modificar orden de compra con ID {ID}.", ID);
-            var ordenExistente = _repository.GetById(ID);
+            var ordenExistente = await _repository.GetByIdAsync(ID);
+            if (ordenExistente == null) return NotFound();
             
-            if (ordenExistente == null)
-            {
-                _logger.LogWarning("Update fallido: No se encontró la orden de compra para actualizar con ID {ID}.", ID);
-                return NotFound();
-            }
-            
+            var validationResult = await _validator.ValidateAsync(orden);
+            if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
+
             orden.ID = ID;
-            _repository.Update(orden);
-            _logger.LogInformation("Orden de compra con ID {ID} actualizada correctamente.", ID);
-            
+            await _repository.UpdateAsync(orden);
+            return Ok(orden);
+        }
+
+        [HttpPut("{ID}/aprobar")]
+        public async Task<IActionResult> Aprobar(int ID)
+        {
+            var orden = await _repository.GetByIdAsync(ID);
+            if (orden == null) return NotFound("Orden no encontrada.");
+    
+            if (orden.Estado != EstadoDeOrden.Pendiente) 
+                return BadRequest("La orden ya fue procesada.");
+
+            var producto = await _productoRepository.GetByIdAsync(orden.ProductoId);
+            if (producto == null) return NotFound("Producto no encontrado.");
+    
+            if (producto.Stock < orden.Cantidad) 
+                return BadRequest("Stock insuficiente.");
+
+            producto.Stock -= orden.Cantidad;
+            orden.Estado = EstadoDeOrden.Aprobado;
+
+            await _productoRepository.UpdateAsync(producto);
+            await _repository.UpdateAsync(orden);
+            await _context.SaveChangesAsync(); 
+
+            _logger.LogInformation("Orden {ID} aprobada correctamente.", ID);
             return Ok(orden);
         }
     }

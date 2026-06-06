@@ -1,17 +1,15 @@
 using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FluentValidation;
-using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Extensions.Logging;
 
 namespace InventarioApp.API.Controllers
 {
     [ApiController]
-    //[Authorize]
     [Route("api/[controller]")]
     public class ProductoController : ControllerBase
     {
@@ -26,125 +24,88 @@ namespace InventarioApp.API.Controllers
             _logger = logger;
         }
     
-        // buscar todos los productos 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
             _logger.LogInformation("Se solicitaron todos los productos");
-            List<Producto> Productos = _repository.GetAll();
-            return Ok(Productos);
+            var productos = await _repository.GetAllAsync();
+            return Ok(productos);
         }
 
-        //Buscar productos con paginación
         [HttpGet("paginado")]
-        public IActionResult GetPaginado([FromQuery] int pagina = 1, [FromQuery] int tamano = 10)
+        public async Task<IActionResult> GetPaginado([FromQuery] int pagina = 1, [FromQuery] int tamano = 10)
         {
-        
             _logger.LogInformation("Se invocó GetPaginado: Página {Pagina}, Tamaño {Tamano}.", pagina, tamano);
             if (pagina <= 0 || tamano <= 0)
             {
-                _logger.LogWarning("Paginación fallida: Parámetros inválidos (Pagina: {Pagina}, Tamano: {Tamano}).", pagina, tamano);
                 return BadRequest(new { mensaje = "La página y el tamaño deben ser mayores a 0." });
             }
 
-            List<Producto> productosPaginados = _repository.GetPaged(pagina, tamano);
-
+            var productosPaginados = await _repository.GetPagedAsync(pagina, tamano);
             return Ok(productosPaginados);
         }
-        //Obtener productos con stock crítico 
+
         [HttpGet("bajo-stock")]
-        public IActionResult GetBajoStock()
+        public async Task<IActionResult> GetBajoStock()
         {
             _logger.LogInformation("Se invocó GetBajoStock: Consultando productos con stock crítico.");
-
-            List<Producto> productosCriticos = _repository.GetProductosBajoStock();
-
-            _logger.LogInformation("Consulta de bajo stock finalizada. Se encontraron {Cantidad} productos en alerta.", productosCriticos.Count);
-
+            var productosCriticos = await _repository.GetProductosBajoStockAsync();
             return Ok(productosCriticos);
         }
-        // 💰 NUEVO ENDPOINT: Obtener el valor monetario total de todo el inventario
-         [HttpGet("valor-total")]
-        public IActionResult GetValorTotal()
+
+        [HttpGet("valor-total")]
+        public async Task<IActionResult> GetValorTotal()
         {
-             _logger.LogInformation("Se invocó GetValorTotal: Calculando el valor monetario total del inventario.");
-
-            double valorTotal = _repository.GetValorTotalInventario();
-
-            _logger.LogInformation("Cálculo finalizado. El valor total del stock actual es: ${ValorTotal}", valorTotal);
-
+            _logger.LogInformation("Se invocó GetValorTotal: Calculando valor total.");
+            double valorTotal = await _repository.GetValorTotalInventarioAsync();
             return Ok(new { valorTotal = valorTotal });
         }
 
-        // buscar producto por id
         [HttpGet("{ID}")]
-        public IActionResult GetById(int ID)
+        public async Task<IActionResult> GetById(int ID)
         {
-            _logger.LogInformation("Se invocó GetById: Buscando producto con ID {ID}.", ID);
-            var Producto = _repository.GetById(ID);
-        
-            if (Producto == null)
-            {
-                _logger.LogWarning("GetById fallido: No se encontró el producto con ID {ID}.", ID);
-                return NotFound();
-            }
-            return Ok(Producto);
+            _logger.LogInformation("Se invocó GetById con ID {ID}.", ID);
+            var producto = await _repository.GetByIdAsync(ID);
+            if (producto == null) return NotFound();
+            return Ok(producto);
         }
 
-        // crear un nuevo producto
         [HttpPost]
-        public IActionResult Create([FromBody] Producto Producto)
+        public async Task<IActionResult> Create([FromBody] Producto producto)
         {
-            _logger.LogInformation("Se invocó Create: Intentando registrar un nuevo producto.");
-            if(Producto == null) return BadRequest();
+            var validationResult = await _validator.ValidateAsync(producto);
+            if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
 
-            var validationResult = _validator.Validate(Producto);
-
-            if (!validationResult.IsValid)
-            {
-                _logger.LogWarning("Create fallido: Error de validación para el producto. Total errores: {CantidadErrores}", validationResult.Errors.Count);
-                return BadRequest(validationResult.Errors.Select(e => new{
-                   campo = e.PropertyName,
-                   error = e.ErrorMessage 
-                }));
-            }
-            _repository.Add(Producto);
-            _logger.LogInformation("Producto creado exitosamente con ID {ID}.", Producto.ID);
-            return CreatedAtAction(nameof(GetById), new{ID = Producto.ID},Producto);
+            await _repository.AddAsync(producto);
+            return CreatedAtAction(nameof(GetById), new { ID = producto.ID }, producto);
         }
 
-        // eliminar producto 
         [HttpDelete("{ID}")]
-        public IActionResult Delete (int ID)
+        public async Task<IActionResult> Delete(int ID)
         {
-            _logger.LogInformation("Se invocó Delete: Intentando eliminar producto con ID {ID}.", ID);
-            var Producto = _repository.GetById(ID);
-            if (Producto == null)
-            {
-                _logger.LogWarning("Delete fallido: No existe el producto con ID {ID}.", ID);
-                return NotFound();
-            }
-            _repository.Delete (ID);
-            _logger.LogInformation("Producto con ID {ID} eliminado correctamente.", ID);
+            var producto = await _repository.GetByIdAsync(ID);
+            if (producto == null) return NotFound();
+
+            await _repository.DeleteAsync(ID);
             return NoContent();
         }
 
-        // modificar producto
         [HttpPut("{ID}")]
-        public IActionResult Update(int ID, [FromBody] Producto Producto)
+        public async Task<IActionResult> Update(int ID, [FromBody] Producto producto)
         {
-            _logger.LogInformation("Se invocó Update: Intentando modificar producto con ID {ID}.", ID);
-            var ProductoExistente = _repository.GetById(ID);
-        
-            if (ProductoExistente == null)
-            {
-                _logger.LogWarning("Update fallido: No se encontró el producto para actualizar con ID {ID}.", ID);
-                return NotFound();
-            }
-            Producto.ID = ID;
-            _repository.Update(Producto);
-            _logger.LogInformation("Producto con ID {ID} actualizado correctamente.", ID);
-            return Ok(Producto);
+            var productoExistente = await _repository.GetByIdAsync(ID);
+            if (productoExistente == null) return NotFound();
+
+            var validationResult = await _validator.ValidateAsync(producto);
+            if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
+
+            productoExistente.Nombre = producto.Nombre;
+            productoExistente.PrecioVenta = producto.PrecioVenta;
+            productoExistente.Stock = producto.Stock;
+            productoExistente.StockMinimo = producto.StockMinimo;
+
+            await _repository.UpdateAsync(productoExistente);
+            return Ok(productoExistente);
         }
     }
 }

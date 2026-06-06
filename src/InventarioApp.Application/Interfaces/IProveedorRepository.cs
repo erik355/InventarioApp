@@ -1,12 +1,15 @@
-using  InventarioApp.Domain.Entities;
+using InventarioApp.Domain.Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace InventarioApp.Application.Interfaces
 {
     public interface IProveedorRepository
     {
-        List<Proveedor>GetAll();
-        Proveedor? GetById(int ID);
-        void Add(Proveedor proveedor);
-        void Delete(int ID);
-        void Update(Proveedor proveedor);
+        Task<List<Proveedor>> GetAllAsync();
+        Task<Proveedor?> GetByIdAsync(int ID);
+        Task AddAsync(Proveedor proveedor);
+        Task DeleteAsync(int ID);
+        Task UpdateAsync(Proveedor proveedor);
     }
 }

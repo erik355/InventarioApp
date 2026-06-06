@@ -1,59 +1,53 @@
 import { useState } from 'react';
-import React from 'react'; 
 import { OrdenesDeCompra } from './components/OrdenesDeCompra';
 import { Productos } from './components/Productos';
 import { Proveedores } from './components/Proveedores';
 
-function App() {
-  // Estado para saber qué pestaña renderizar
-  const [pestanaActiva, setPestanaActiva] = useState<'productos' | 'proveedores' | 'ordenes'>('ordenes');
+const COMPONENTES = {
+  ordenes: <OrdenesDeCompra />,
+  productos: <Productos />,
+  proveedores: <Proveedores />
+};
 
-  // Función para darle estilos a los botones del menú
-  const obtenerEstiloBoton = (tipo: 'productos' | 'proveedores' | 'ordenes'): React.CSSProperties => ({
-    padding: '10px 20px',
-    marginRight: '10px',
-    cursor: 'pointer',
-    backgroundColor: pestanaActiva === tipo ? '#646cff' : '#242424',
-    color: '#fff',
-    border: '1px solid #444',
-    borderRadius: '4px',
-    fontWeight: 'bold',
-    transition: 'background-color 0.2s'
-  });
+type Pestana = keyof typeof COMPONENTES;
+
+function App() {
+  const [pestanaActiva, setPestanaActiva] = useState<Pestana>('ordenes');
 
   return (
     <div style={{ padding: '30px', fontFamily: 'sans-serif', color: '#fff', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ color: '#646cff', marginBottom: '5px' }}>📦 Sistema de Inventario</h1>
-      <p style={{ color: '#888', marginTop: '0', marginBottom: '25px' }}>Panel de administración global</p>
+      <header style={{ marginBottom: '25px' }}>
+        <h1 style={{ color: '#646cff', marginBottom: '5px' }}>📦 Sistema de Inventario</h1>
+        <p style={{ color: '#888', marginTop: '0' }}>Panel de administración global</p>
+      </header>
       
-      {/* Selector de pestañas */}
-      <div style={{ marginBottom: '30px', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
-        <button 
-          style={obtenerEstiloBoton('ordenes')} 
-          onClick={() => setPestanaActiva('ordenes')}
-        >
-          📝 Órdenes de Compra
-        </button>
-        <button 
-          style={obtenerEstiloBoton('productos')} 
-          onClick={() => setPestanaActiva('productos')}
-        >
-          📦 Productos
-        </button>
-        <button 
-          style={obtenerEstiloBoton('proveedores')} 
-          onClick={() => setPestanaActiva('proveedores')}
-        >
-          🏢 Proveedores
-        </button>
-      </div>
+      {/* Navegación */}
+      <nav style={{ marginBottom: '30px', borderBottom: '1px solid #333', paddingBottom: '15px' }}>
+        {(Object.keys(COMPONENTES) as Pestana[]).map((pestana) => (
+          <button 
+            key={pestana}
+            onClick={() => setPestanaActiva(pestana)}
+            style={{
+              padding: '10px 20px',
+              marginRight: '10px',
+              cursor: 'pointer',
+              backgroundColor: pestanaActiva === pestana ? '#646cff' : '#242424',
+              color: '#fff',
+              border: '1px solid #444',
+              borderRadius: '4px',
+              fontWeight: 'bold',
+              textTransform: 'capitalize'
+            }}
+          >
+            {pestana === 'ordenes' ? '📝 Órdenes' : pestana === 'productos' ? '📦 Productos' : '🏢 Proveedores'}
+          </button>
+        ))}
+      </nav>
 
-      {/* Renderizado dinámico según la pestaña seleccionada */}
-      <div style={{ marginTop: '10px' }}>
-        {pestanaActiva === 'ordenes' && <OrdenesDeCompra />}
-        {pestanaActiva === 'productos' && <Productos />}
-        {pestanaActiva === 'proveedores' && <Proveedores />}
-      </div>
+      {/* Renderizado Dinámico */}
+      <main>
+        {COMPONENTES[pestanaActiva]}
+      </main>
     </div>
   );
 }

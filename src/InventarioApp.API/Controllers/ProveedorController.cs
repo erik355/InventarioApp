@@ -5,6 +5,7 @@ using FluentValidation;
 using Microsoft.Extensions.Logging; 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace InventarioApp.API.Controllers
 {
@@ -16,7 +17,6 @@ namespace InventarioApp.API.Controllers
         private readonly IValidator<Proveedor> _validator;
         private readonly ILogger<ProveedorController> _logger; 
 
-        // 📦 ACTUALIZADO: Constructor inyectando el ILogger
         public ProveedorController(
             IProveedorRepository repository, 
             IValidator<Proveedor> validator, 
@@ -27,21 +27,19 @@ namespace InventarioApp.API.Controllers
             _logger = logger;
         }
 
-        // Buscar todos los proveedores 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
             _logger.LogInformation("Se invocó GetAll: Consultando el listado completo de proveedores.");
-            List<Proveedor> Proveedores = _repository.GetAll();
-            return Ok(Proveedores);
+            var proveedores = await _repository.GetAllAsync();
+            return Ok(proveedores);
         }
 
-        // Buscar proveedor por id
         [HttpGet("{ID}")]
-        public IActionResult GetById(int ID)
+        public async Task<IActionResult> GetById(int ID)
         {
             _logger.LogInformation("Se invocó GetById: Buscando proveedor con ID {ID}.", ID);
-            var proveedor = _repository.GetById(ID);
+            var proveedor = await _repository.GetByIdAsync(ID);
             
             if (proveedor == null)
             {
@@ -51,69 +49,49 @@ namespace InventarioApp.API.Controllers
             return Ok(proveedor);
         }
 
-        // Crear un nuevo proveedor
         [HttpPost]
-        public IActionResult Create([FromBody] Proveedor proveedor)
+        public async Task<IActionResult> Create([FromBody] Proveedor proveedor)
         {
             _logger.LogInformation("Se invocó Create: Intentando registrar un nuevo proveedor.");
             
-            if (proveedor == null) 
-            {
-                _logger.LogWarning("Create fallido: El cuerpo del proveedor llegó nulo.");
-                return BadRequest();
-            }
+            if (proveedor == null) return BadRequest();
 
-            var validationResult = _validator.Validate(proveedor);
+            var validationResult = await _validator.ValidateAsync(proveedor);
             if (!validationResult.IsValid)
             {
-                _logger.LogWarning("Create fallido: Error de validación para el proveedor. Total errores: {CantidadErrores}", validationResult.Errors.Count);
                 return BadRequest(validationResult.Errors.Select(e => new { 
                     campo = e.PropertyName, 
                     error = e.ErrorMessage 
                 }));
             }
 
-            _repository.Add(proveedor);
-            _logger.LogInformation("Proveedor creado exitosamente con ID {ID}.", proveedor.ID);
-            
+            await _repository.AddAsync(proveedor);
             return CreatedAtAction(nameof(GetById), new { ID = proveedor.ID }, proveedor);
         }
 
-        //Eliminar proveedor
         [HttpDelete("{ID}")]
-        public IActionResult Delete(int ID)
+        public async Task<IActionResult> Delete(int ID)
         {
-            _logger.LogInformation("Se invocó Delete: Intentando eliminar proveedor con ID {ID}.", ID);
-            var proveedor = _repository.GetById(ID);
+            var proveedor = await _repository.GetByIdAsync(ID);
+            if (proveedor == null) return NotFound();
             
-            if (proveedor == null)
-            {
-                _logger.LogWarning("Delete fallido: No existe el proveedor con ID {ID}.", ID);
-                return NotFound();
-            }
-            
-            _repository.Delete(ID);
-            _logger.LogInformation("Proveedor con ID {ID} eliminado correctamente.", ID);
+            await _repository.DeleteAsync(ID);
             return NoContent();
         }
 
-        // Modificar proveedor 
         [HttpPut("{ID}")]
-        public IActionResult Update(int ID, [FromBody] Proveedor proveedor)
+        public async Task<IActionResult> Update(int ID, [FromBody] Proveedor proveedor)
         {
-            _logger.LogInformation("Se invocó Update: Intentando modificar proveedor con ID {ID}.", ID);
-            var proveedorExistente = _repository.GetById(ID);
+            var proveedorExistente = await _repository.GetByIdAsync(ID);
+            if (proveedorExistente == null) return NotFound();
             
-            if (proveedorExistente == null)
-            {
-                _logger.LogWarning("Update fallido: No se encontró el proveedor para actualizar con ID {ID}.", ID);
-                return NotFound();
-            }
-            
+            var validationResult = await _validator.ValidateAsync(proveedor);
+            if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
+
             proveedor.ID = ID;
-            _repository.Update(proveedor);
-            _logger.LogInformation("Proveedor con ID {ID} actualizado correctamente.", ID);
+            await _repository.UpdateAsync(proveedor);
             
+            _logger.LogInformation("Proveedor con ID {ID} actualizado correctamente.", ID);
             return Ok(proveedor);
         }
     }

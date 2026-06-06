@@ -2,55 +2,50 @@ using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
 using InventarioApp.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace InventarioApp.Infrastructure.Repositories
 {
     public class OrdenDeCompraRepository : IOrdenDeCompraRepository
     {
         private readonly AppDbContext _context;
+
         public OrdenDeCompraRepository(AppDbContext context)
         {
             _context = context;
         }
-        //buscar todos las ordenes de compra
-        public List<OrdenDeCompra> GetAll()
-        {
-            return _context.OrdenDeCompras
-                   .Include(o => o.Proveedor)
-                   .Include(o => o.Producto)
-                   .ToList();
-        }
-        //buscar por ID
-        public OrdenDeCompra? GetById(int ID)
-        {
-            // CORREGIDO: Cambiado OrdenDeCompras a OrdenDeCompra y el número 0 por la letra o
-            return _context.OrdenDeCompras
-                   .Include(o => o.Proveedor)
-                   .Include(o => o.Producto)
-                   .FirstOrDefault(o => o.ID == ID);
 
-        }
-        // Agregar orden
-        public void Add(OrdenDeCompra orden)
+        public async Task<List<OrdenDeCompra>> GetAllAsync()
         {
-            _context.OrdenDeCompras.Add(orden);
-            _context.SaveChanges();
+            return await _context.OrdenDeCompra.ToListAsync();
         }
-        //Eliminar orden
-        public void Delete(int ID)
+
+        public async Task<OrdenDeCompra?> GetByIdAsync(int ID)
         {
-            var orden = GetById(ID);
-            if(orden != null)
+            return await _context.OrdenDeCompra.FirstOrDefaultAsync(o => o.ID == ID);
+        }
+
+        public async Task AddAsync(OrdenDeCompra orden)
+        {
+            await _context.OrdenDeCompra.AddAsync(orden);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(int ID)
+        {
+            var orden = await GetByIdAsync(ID);
+            if (orden != null)
             {
-                _context.OrdenDeCompras.Remove(orden);
-                _context.SaveChanges();
+                _context.OrdenDeCompra.Remove(orden);
+                await _context.SaveChangesAsync();
             }
         }
-        //Actualizar orden
-        public void Update(OrdenDeCompra orden)
+
+        public async Task UpdateAsync(OrdenDeCompra orden)
         {
-            _context.OrdenDeCompras.Update(orden);
-            _context.SaveChanges();
+            _context.OrdenDeCompra.Update(orden);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,11 +1,10 @@
-using System.Runtime.InteropServices;
 using InventarioApp.Application.Interfaces;
 using InventarioApp.Domain.Entities;
 using InventarioApp.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore.Metadata;
-using SQLitePCL;
+using Microsoft.EntityFrameworkCore; 
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace InventarioApp.Infrastructure.Repositories
 {
@@ -18,65 +17,57 @@ namespace InventarioApp.Infrastructure.Repositories
             _context = context;
         }
     
-        // Buscar todos los productos 
-        public List<Producto> GetAll()
+        public async Task<List<Producto>> GetAllAsync()
         {
-           return _context.Producto.ToList();
+            return await _context.Producto.ToListAsync();
         }
         
-        //Cambiado de GetByID a GetById
-        public Producto? GetById(int ID)
+        public async Task<Producto?> GetByIdAsync(int ID)
         {
-            return _context.Producto.FirstOrDefault(p => p.ID == ID);
+            return await _context.Producto.FirstOrDefaultAsync(p => p.ID == ID);
         }
         
-        // Agregar producto
-        public void Add(Producto Producto)
+        public async Task AddAsync(Producto producto)
         {
-            _context.Producto.Add(Producto);
-            _context.SaveChanges();
+            await _context.Producto.AddAsync(producto);
+            await _context.SaveChangesAsync();
         }
         
-        // eliminar producto
-        public void Delete(int ID)
+        public async Task DeleteAsync(int ID)
         {
-            var producto = GetById(ID); 
+            var producto = await GetByIdAsync(ID); 
             if (producto != null)
             { 
                 _context.Producto.Remove(producto);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
             }
         }
        
-        // Actualizar producto
-        public void Update(Producto Producto)
+        public async Task UpdateAsync(Producto producto)
         {
-            _context.Producto.Update(Producto);
-            _context.SaveChanges();
+            _context.Producto.Update(producto);
+            await _context.SaveChangesAsync();
         }
 
-        //Obtener productos paginados
-        public List<Producto> GetPaged(int pagina, int tamaño)
+        public async Task<List<Producto>> GetPagedAsync(int pagina, int tamaño)
         {
-            return _context.Producto
+            return await _context.Producto
                .OrderBy(p => p.ID)
                .Skip((pagina - 1) * tamaño)
                .Take(tamaño)
-               .ToList();
+               .ToListAsync();
         }
 
-        //Obtener productos con stock critico
-        public List<Producto> GetProductosBajoStock()
+        public async Task<List<Producto>> GetProductosBajoStockAsync()
         {
-            return _context.Producto
+            return await _context.Producto
                 .Where(p => p.Stock <= p.StockMinimo)
-                .ToList();
+                .ToListAsync();
         }
 
-        //Multiplica Precio * Stock de cada producto y suma todo eficientemente
-        public double GetValorTotalInventario()
+        public async Task<double> GetValorTotalInventarioAsync()
         {
-            return _context.Producto.Sum(p => p.Precio * p.Stock);
+            return await _context.MovimientoStock.SumAsync(m => (double)(m.Cantidad * m.PrecioCompra));
         }
     }
 }

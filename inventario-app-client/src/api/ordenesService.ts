@@ -1,16 +1,22 @@
-// src/api/ordenesService.ts
 import api from './api';
 import type { OrdenDeCompra } from '../types';
 
 export const ordenesService = {
     obtenerTodas: async (): Promise<OrdenDeCompra[]> => {
-        const respuesta = await api.get<OrdenDeCompra[]>('/ordendecompra'); 
-        return respuesta.data;
+        const { data } = await api.get<OrdenDeCompra[]>('/ordendecompra');
+        return data;
     },
 
-    // 🚀 NUEVO MÉTODO PARA CREAR ORDEN
-    crear: async (nuevaOrden: Omit<OrdenDeCompra, 'id' | 'proveedor' | 'producto'>): Promise<OrdenDeCompra> => {
-        const respuesta = await api.post<OrdenDeCompra>('/ordendecompra', nuevaOrden);
-        return respuesta.data;
+    crear: async (nuevaOrden: Omit<OrdenDeCompra, 'ID'>): Promise<OrdenDeCompra> => {
+        const { data } = await api.post<OrdenDeCompra>('/ordendecompra', nuevaOrden);
+        return data;
+    },
+
+    aprobar: async (id: number): Promise<void> => {
+        await api.put(`/ordendecompra/aprobar/${id}`);
+    },
+
+    eliminar: async (id: number): Promise<void> => {
+        await api.delete(`/ordendecompra/${id}`);
     }
 };
