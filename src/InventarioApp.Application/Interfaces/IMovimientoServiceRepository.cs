@@ -9,5 +9,6 @@ namespace InventarioApp.Application.Interfaces
         Task RegistrarEntradaAsync(int productoID, int proveedorID, int cantidad, double precioCompra, string notas);
         Task RegistrarSalidaAsync(int productoID, int cantidad, string notas);
         Task<IEnumerable<MovimientoStock>> ObtenerHistorialPorProductoAsync(int productoID);
+        Task<IEnumerable<MovimientoStock>> ObtenerHistorialAsync();
     }
 }

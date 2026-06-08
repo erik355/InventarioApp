@@ -73,6 +73,18 @@ export function Proveedores() {
     setFormulario({ NombreDeEmpresa: '', CUIT: '', Rubro: '', Telefono: '' });
   };
 
+  const eliminarProveedor = async (id: number) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este proveedor?")) return;
+    try {
+      await proveedoresService.eliminar(id);
+      await cargarProveedores();
+      alert("✅ Proveedor eliminado con éxito");
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el proveedor. Verifique que no tenga órdenes asociadas.");
+    }
+  };
+
   if (cargando) return <div style={{ color: '#fff' }}>Cargando directorio...</div>;
 
   return (
@@ -103,15 +115,30 @@ export function Proveedores() {
               <td>{prov.CUIT}</td>
               <td>{prov.Rubro}</td>
               <td>
-                <button onClick={() => { 
-                  setIdProveedorEnEdicion(prov.ID); 
-                  setFormulario({ 
-                    NombreDeEmpresa: prov.NombreDeEmpresa || '', 
-                    CUIT: prov.CUIT.toString(), 
-                    Rubro: prov.Rubro || '', 
-                    Telefono: prov.Telefono?.toString() || '' 
-                  }); 
-                }}>Editar</button>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => { 
+                    setIdProveedorEnEdicion(prov.ID); 
+                    setFormulario({ 
+                      NombreDeEmpresa: prov.NombreDeEmpresa || '', 
+                      CUIT: prov.CUIT.toString(), 
+                      Rubro: prov.Rubro || '', 
+                      Telefono: prov.Telefono?.toString() || '' 
+                    }); 
+                  }}>Editar</button>
+                  <button 
+                    onClick={() => eliminarProveedor(prov.ID)}
+                    style={{
+                      background: '#f44336',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '4px 8px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Eliminar
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

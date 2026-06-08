@@ -72,5 +72,14 @@ namespace InventarioApp.Infrastructure.Services
                 .OrderByDescending(m => m.FechaMovimiento)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<MovimientoStock>> ObtenerHistorialAsync()
+        {
+            return await _context.MovimientoStock
+                .Include(m => m.Producto)
+                .Include(m => m.Proveedor)
+                .OrderByDescending(m => m.FechaMovimiento)
+                .ToListAsync();
+        }
     }
 }

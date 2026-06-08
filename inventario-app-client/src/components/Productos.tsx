@@ -119,6 +119,18 @@ export function Productos() {
     setIdProductoEnEdicion(null);
   };
 
+  const eliminarProducto = async (id: number) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este producto?")) return;
+    try {
+      await productosService.eliminar(id);
+      await cargarTodoElPanel();
+      alert("✅ Producto eliminado con éxito");
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el producto");
+    }
+  };
+
   if (cargando) return <div style={{ padding: '20px', textAlign: 'center' }}>Cargando datos...</div>;
 
   return (
@@ -134,6 +146,7 @@ export function Productos() {
       <div style={{ 
         padding: '15px', 
         background: '#f4f4f4', 
+        color: '#1a1a1a',
         marginBottom: '20px', 
         borderRadius: '5px',
         display: 'flex',
@@ -152,6 +165,7 @@ export function Productos() {
         marginBottom: '20px', 
         padding: '20px', 
         background: '#f9f9f9', 
+        color: '#1a1a1a',
         borderRadius: '8px' 
       }}>
         <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
@@ -236,6 +250,7 @@ export function Productos() {
                 padding: '12px',
                 marginBottom: '8px',
                 background: p.Stock <= p.StockMinimo ? '#fff3e0' : 'white',
+                color: '#1a1a1a',
                 borderLeft: `4px solid ${p.Stock <= p.StockMinimo ? '#ff9800' : '#4caf50'}`,
                 borderRadius: '4px',
                 display: 'flex',
@@ -256,19 +271,34 @@ export function Productos() {
                   Precio: ${p.PrecioVenta.toFixed(2)}
                 </span>
               </div>
-              <button 
-                onClick={() => editarProducto(p)}
-                style={{
-                  padding: '5px 15px',
-                  background: '#ff9800',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                Editar
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  onClick={() => editarProducto(p)}
+                  style={{
+                    padding: '5px 15px',
+                    background: '#ff9800',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Editar
+                </button>
+                <button 
+                  onClick={() => eliminarProducto(p.ID)}
+                  style={{
+                    padding: '5px 15px',
+                    background: '#f44336',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Eliminar
+                </button>
+              </div>
             </li>
           ))}
         </ul>

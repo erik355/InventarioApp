@@ -32,13 +32,28 @@ namespace InventarioApp.API.Controllers
         {
             _logger.LogInformation("Se invocó GetAll: Consultando el listado completo de proveedores.");
             var proveedores = await _repository.GetAllAsync();
-            return Ok(proveedores);
+            
+            // ✅ FILTRAR proveedores con ID válido
+            var proveedoresValidos = proveedores.Where(p => p != null && p.ID > 0).ToList();
+            
+            if (proveedores.Count != proveedoresValidos.Count)
+                _logger.LogWarning($"⚠️ Se omitieron {proveedores.Count - proveedoresValidos.Count} proveedores con ID inválido");
+            
+            return Ok(proveedoresValidos);
         }
 
         [HttpGet("{ID}")]
         public async Task<IActionResult> GetById(int ID)
         {
             _logger.LogInformation("Se invocó GetById: Buscando proveedor con ID {ID}.", ID);
+            
+            // ✅ Validar ID
+            if (ID <= 0)
+            {
+                _logger.LogWarning("GetById fallido: ID inválido {ID}.", ID);
+                return BadRequest(new { mensaje = "ID inválido" });
+            }
+            
             var proveedor = await _repository.GetByIdAsync(ID);
             
             if (proveedor == null)
@@ -46,6 +61,14 @@ namespace InventarioApp.API.Controllers
                 _logger.LogWarning("GetById fallido: No se encontró el proveedor con ID {ID}.", ID);
                 return NotFound();
             }
+            
+            // ✅ Validar que el proveedor no esté corrupto
+            if (proveedor.ID <= 0)
+            {
+                _logger.LogWarning($"Proveedor con ID {ID} tiene ID inválido");
+                return NotFound();
+            }
+            
             return Ok(proveedor);
         }
 
@@ -54,7 +77,10 @@ namespace InventarioApp.API.Controllers
         {
             _logger.LogInformation("Se invocó Create: Intentando registrar un nuevo proveedor.");
             
-            if (proveedor == null) return BadRequest();
+            if (proveedor == null) 
+            {
+                return BadRequest("Proveedor no puede ser nulo");
+            }
 
             var validationResult = await _validator.ValidateAsync(proveedor);
             if (!validationResult.IsValid)
@@ -72,22 +98,36 @@ namespace InventarioApp.API.Controllers
         [HttpDelete("{ID}")]
         public async Task<IActionResult> Delete(int ID)
         {
+            // ✅ Validar ID
+            if (ID <= 0)
+            {
+                return BadRequest("ID inválido");
+            }
+            
             var proveedor = await _repository.GetByIdAsync(ID);
             if (proveedor == null) return NotFound();
             
             await _repository.DeleteAsync(ID);
+            _logger.LogInformation("Proveedor con ID {ID} eliminado correctamente.", ID);
             return NoContent();
         }
 
         [HttpPut("{ID}")]
         public async Task<IActionResult> Update(int ID, [FromBody] Proveedor proveedor)
         {
+            // ✅ Validar ID
+            if (ID <= 0)
+            {
+                return BadRequest("ID inválido");
+            }
+            
             var proveedorExistente = await _repository.GetByIdAsync(ID);
             if (proveedorExistente == null) return NotFound();
             
             var validationResult = await _validator.ValidateAsync(proveedor);
             if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
 
+            // ✅ Mantener el ID original
             proveedor.ID = ID;
             await _repository.UpdateAsync(proveedor);
             

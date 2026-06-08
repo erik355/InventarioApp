@@ -29,7 +29,14 @@ namespace InventarioApp.API.Controllers
         {
             _logger.LogInformation("Se solicitaron todos los productos");
             var productos = await _repository.GetAllAsync();
-            return Ok(productos);
+            
+            // ✅ FILTRAR productos con ID válido
+            var productosValidos = productos.Where(p => p != null && p.ID > 0).ToList();
+            
+            if (productos.Count != productosValidos.Count)
+                _logger.LogWarning($"⚠️ Se omitieron {productos.Count - productosValidos.Count} productos con ID inválido");
+            
+            return Ok(productosValidos);
         }
 
         [HttpGet("paginado")]
@@ -42,6 +49,13 @@ namespace InventarioApp.API.Controllers
             }
 
             var productosPaginados = await _repository.GetPagedAsync(pagina, tamano);
+            
+            // ✅ Filtrar productos con ID válido en paginado
+            if (productosPaginados != null && productosPaginados.Any())
+            {
+                productosPaginados = productosPaginados.Where(p => p != null && p.ID > 0).ToList();
+            }
+            
             return Ok(productosPaginados);
         }
 
@@ -49,7 +63,12 @@ namespace InventarioApp.API.Controllers
         public async Task<IActionResult> GetBajoStock()
         {
             _logger.LogInformation("Se invocó GetBajoStock: Consultando productos con stock crítico.");
-            var productosCriticos = await _repository.GetProductosBajoStockAsync();
+            var productos = await _repository.GetAllAsync();
+            
+            // ✅ Filtrar productos válidos y luego aplicar condición de bajo stock
+            var productosValidos = productos.Where(p => p != null && p.ID > 0).ToList();
+            var productosCriticos = productosValidos.Where(p => p.Stock <= p.StockMinimo).ToList();
+            
             return Ok(productosCriticos);
         }
 
@@ -57,7 +76,15 @@ namespace InventarioApp.API.Controllers
         public async Task<IActionResult> GetValorTotal()
         {
             _logger.LogInformation("Se invocó GetValorTotal: Calculando valor total.");
-            double valorTotal = await _repository.GetValorTotalInventarioAsync();
+            
+            // ✅ Calcular basado en productos actuales, no en movimientos
+            var productos = await _repository.GetAllAsync();
+            var valorTotal = productos
+                .Where(p => p != null && p.ID > 0 && p.PrecioVenta > 0)
+                .Sum(p => p.PrecioVenta * p.Stock);
+            
+            _logger.LogInformation($"Valor total calculado: {valorTotal}");
+            
             return Ok(new { valorTotal = valorTotal });
         }
 
@@ -65,14 +92,35 @@ namespace InventarioApp.API.Controllers
         public async Task<IActionResult> GetById(int ID)
         {
             _logger.LogInformation("Se invocó GetById con ID {ID}.", ID);
+            
+            // ✅ Validar ID
+            if (ID <= 0)
+            {
+                return BadRequest(new { mensaje = "ID inválido" });
+            }
+            
             var producto = await _repository.GetByIdAsync(ID);
             if (producto == null) return NotFound();
+            
+            // ✅ Validar que el producto no esté corrupto
+            if (producto.ID <= 0 || producto.PrecioVenta <= 0)
+            {
+                _logger.LogWarning($"Producto con ID {ID} tiene datos inválidos");
+                return NotFound();
+            }
+            
             return Ok(producto);
         }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Producto producto)
         {
+            // ✅ Validación adicional
+            if (producto == null)
+            {
+                return BadRequest("Producto no puede ser nulo");
+            }
+            
             var validationResult = await _validator.ValidateAsync(producto);
             if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
 
@@ -83,6 +131,12 @@ namespace InventarioApp.API.Controllers
         [HttpDelete("{ID}")]
         public async Task<IActionResult> Delete(int ID)
         {
+            // ✅ Validar ID
+            if (ID <= 0)
+            {
+                return BadRequest("ID inválido");
+            }
+            
             var producto = await _repository.GetByIdAsync(ID);
             if (producto == null) return NotFound();
 
@@ -93,6 +147,12 @@ namespace InventarioApp.API.Controllers
         [HttpPut("{ID}")]
         public async Task<IActionResult> Update(int ID, [FromBody] Producto producto)
         {
+            // ✅ Validar ID
+            if (ID <= 0)
+            {
+                return BadRequest("ID inválido");
+            }
+            
             var productoExistente = await _repository.GetByIdAsync(ID);
             if (productoExistente == null) return NotFound();
 

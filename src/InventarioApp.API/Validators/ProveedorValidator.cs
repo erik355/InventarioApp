@@ -13,8 +13,6 @@ namespace InventarioApp.API.Validators
             RuleFor(p => p.CUIT)
                 .GreaterThan(0).WithMessage("El CUIT debe ser un número válido.");
 
-            RuleFor(p => p.Rubro)
-                .NotEmpty().WithMessage("El rubro es obligatorio.");
         }
     }
 }

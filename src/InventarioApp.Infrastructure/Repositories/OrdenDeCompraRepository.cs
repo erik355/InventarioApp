@@ -18,12 +18,18 @@ namespace InventarioApp.Infrastructure.Repositories
 
         public async Task<List<OrdenDeCompra>> GetAllAsync()
         {
-            return await _context.OrdenDeCompra.ToListAsync();
+            return await _context.OrdenDeCompra
+                .Include(o => o.Producto)
+                .Include(o => o.Proveedor)
+                .ToListAsync();
         }
 
         public async Task<OrdenDeCompra?> GetByIdAsync(int ID)
         {
-            return await _context.OrdenDeCompra.FirstOrDefaultAsync(o => o.ID == ID);
+            return await _context.OrdenDeCompra
+                .Include(o => o.Producto)
+                .Include(o => o.Proveedor)
+                .FirstOrDefaultAsync(o => o.ID == ID);
         }
 
         public async Task AddAsync(OrdenDeCompra orden)

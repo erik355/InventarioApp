@@ -42,5 +42,12 @@ namespace InventarioApp.API.Controllers
             var historial = await _movimientoService.ObtenerHistorialPorProductoAsync(productoID);
             return Ok(historial);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetHistorialTodo()
+        {
+            var historial = await _movimientoService.ObtenerHistorialAsync();
+            return Ok(historial);
+        }
     }
 }

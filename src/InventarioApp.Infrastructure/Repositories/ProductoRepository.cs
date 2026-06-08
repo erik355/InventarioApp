@@ -65,9 +65,14 @@ namespace InventarioApp.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        // ✅ MÉTODO CORREGIDO
         public async Task<double> GetValorTotalInventarioAsync()
         {
-            return await _context.MovimientoStock.SumAsync(m => (double)(m.Cantidad * m.PrecioCompra));
+            var productos = await _context.Producto
+                .Where(p => p.ID > 0 && p.PrecioVenta > 0)
+                .ToListAsync();
+            
+            return productos.Sum(p => p.PrecioVenta * p.Stock);
         }
     }
 }

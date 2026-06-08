@@ -13,7 +13,7 @@ export const ordenesService = {
     },
 
     aprobar: async (id: number): Promise<void> => {
-        await api.put(`/ordendecompra/aprobar/${id}`);
+        await api.put(`/ordendecompra/${id}/aprobar`);
     },
 
     eliminar: async (id: number): Promise<void> => {
